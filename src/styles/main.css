@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#pdf-viewer {
+    position: relative;
+    min-height: 500px;
+    background: white;
+    overflow: hidden;
+}
+
+#pdf-viewer canvas {
+    display: block;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.signature-preview {
+    position: absolute !important;
+    touch-action: none;
+    user-select: none;
+    z-index: 100;
+    pointer-events: auto;
+    cursor: move;
+}
+
+#signature-pad {
+    touch-action: none;
+}
