@@ -73,6 +73,39 @@
                 </div>
             </section>
 
+            <!-- Date & Time Picker -->
+            <section class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Add Date & Time</h2>
+                <input type="datetime-local" id="date-time-picker" class="border rounded p-2 w-full mb-4">
+                <button id="add-date-time" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Add Date & Time
+                </button>
+            </section>
+
+            <!-- Stamp Upload -->
+            <section class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Add Stamp</h2>
+                <input type="file" id="stamp-upload" accept="image/*" class="block w-full text-sm text-gray-500 mb-4
+                       file:mr-4 file:py-2 file:px-4
+                       file:rounded-full file:border-0
+                       file:text-sm file:font-semibold
+                       file:bg-blue-50 file:text-blue-700
+                       hover:file:bg-blue-100
+                       cursor-pointer">
+                <button id="add-stamp" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Add Stamp
+                </button>
+            </section>
+
+            <!-- Text Input -->
+            <section class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Add Text</h2>
+                <input type="text" id="text-input" placeholder="Enter text" class="border rounded p-2 w-full mb-4">
+                <button id="add-text" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Add Text
+                </button>
+            </section>
+
             <!-- Download Button -->
             <section class="flex justify-center">
                 <button id="download-doc" 

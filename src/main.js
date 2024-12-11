@@ -1,9 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
 
 // Set worker path to local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
-
 
 let pdfDoc = null;
 let currentPage = 1;
@@ -22,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('save-signature').addEventListener('click', handleSaveSignature);
     document.getElementById('clear-signature').addEventListener('click', () => signaturePad.clear());
     document.getElementById('download-doc').addEventListener('click', handleDownload);
+    document.getElementById('add-date-time').addEventListener('click', addDateTime);
+    document.getElementById('add-stamp').addEventListener('click', addStamp);
+    document.getElementById('add-text').addEventListener('click', addText);
 
     // Initialize signature pad with proper size
     resizeCanvas();
@@ -161,141 +163,189 @@ class SignaturePad {
 }
 
 async function handleSaveSignature() {
-  if (signaturePad.isEmpty()) {
-      alert('Please draw a signature first');
-      return;
-  }
+    if (signaturePad.isEmpty()) {
+        alert('Please draw a signature first');
+        return;
+    }
 
-  // Create signature image
-  const signatureImage = document.createElement('img');
-  signatureImage.src = signaturePad.toDataURL();
-  signatureImage.className = 'signature-preview';
-  signatureImage.style.maxWidth = '200px';
+    // Create signature image
+    const signatureImage = document.createElement('img');
+    signatureImage.src = signaturePad.toDataURL();
+    signatureImage.className = 'signature-preview';
+    signatureImage.style.maxWidth = '200px';
+    signatureImage.style.position = 'absolute';
+    signatureImage.style.left = '50px';
+    signatureImage.style.top = '50px';
+    signatureImage.style.zIndex = '1000';
 
-  // Remove existing signature if any
-  const existingSignature = document.querySelector('.signature-preview');
-  if (existingSignature) {
-      existingSignature.remove();
-  }
+    // Remove existing signature if any
+    const existingSignature = document.querySelector('.signature-preview');
+    if (existingSignature) {
+        existingSignature.remove();
+    }
 
-  // Add to PDF viewer
-  const pdfViewer = document.getElementById('pdf-viewer');
-  pdfViewer.appendChild(signatureImage);
+    // Add to PDF viewer
+    const pdfViewer = document.getElementById('pdf-viewer');
+    pdfViewer.appendChild(signatureImage);
 
-  // Wait for image to load to get correct dimensions
-  signatureImage.onload = () => {
-      // Center horizontally and position at top quarter
-      const viewerRect = pdfViewer.getBoundingClientRect();
-      const initialX = 50; // Fixed left margin
-      const initialY = 50; // Fixed top margin
-      
-      signatureImage.style.left = `${initialX}px`;
-      signatureImage.style.top = `${initialY}px`;
-  };
-
-  makeDraggable(signatureImage);
+    makeDraggable(signatureImage);
 }
 
 function makeDraggable(element) {
-  let active = false;
-  let currentX;
-  let currentY;
-  let initialX;
-  let initialY;
-  let xOffset = parseInt(element.style.left) || 0;
-  let yOffset = parseInt(element.style.top) || 0;
+    let active = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = parseInt(element.style.left) || 0;
+    let yOffset = parseInt(element.style.top) || 0;
 
-  element.addEventListener('mousedown', dragStart, false);
-  element.addEventListener('touchstart', dragStart, false);
-  document.addEventListener('mousemove', drag, false);
-  document.addEventListener('touchmove', drag, false);
-  document.addEventListener('mouseup', dragEnd, false);
-  document.addEventListener('touchend', dragEnd, false);
+    element.addEventListener('mousedown', dragStart, false);
+    element.addEventListener('touchstart', dragStart, false);
+    document.addEventListener('mousemove', drag, false);
+    document.addEventListener('touchmove', drag, false);
+    document.addEventListener('mouseup', dragEnd, false);
+    document.addEventListener('touchend', dragEnd, false);
 
-  function dragStart(e) {
-      const pdfViewer = document.getElementById('pdf-viewer');
-      const viewerRect = pdfViewer.getBoundingClientRect();
+    function dragStart(e) {
+        const pdfViewer = document.getElementById('pdf-viewer');
+        const viewerRect = pdfViewer.getBoundingClientRect();
 
-      if (e.type === 'touchstart') {
-          initialX = e.touches[0].clientX - viewerRect.left;
-          initialY = e.touches[0].clientY - viewerRect.top;
-      } else {
-          initialX = e.clientX - viewerRect.left;
-          initialY = e.clientY - viewerRect.top;
-      }
+        if (e.type === 'touchstart') {
+            initialX = e.touches[0].clientX - viewerRect.left;
+            initialY = e.touches[0].clientY - viewerRect.top;
+        } else {
+            initialX = e.clientX - viewerRect.left;
+            initialY = e.clientY - viewerRect.top;
+        }
 
-      if (e.target === element) {
-          active = true;
-          xOffset = parseInt(element.style.left) || 0;
-          yOffset = parseInt(element.style.top) || 0;
-          
-          // Calculate the offset from the mouse position to the element's top-left corner
-          initialX = initialX - xOffset;
-          initialY = initialY - yOffset;
-      }
-  }
+        if (e.target === element) {
+            active = true;
+            xOffset = parseInt(element.style.left) || 0;
+            yOffset = parseInt(element.style.top) || 0;
+            
+            // Calculate the offset from the mouse position to the element's top-left corner
+            initialX = initialX - xOffset;
+            initialY = initialY - yOffset;
+        }
+    }
 
-  function drag(e) {
-      if (active) {
-          e.preventDefault();
+    function drag(e) {
+        if (active) {
+            e.preventDefault();
 
-          const pdfViewer = document.getElementById('pdf-viewer');
-          const viewerRect = pdfViewer.getBoundingClientRect();
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const viewerRect = pdfViewer.getBoundingClientRect();
 
-          let mouseX, mouseY;
-          if (e.type === 'touchmove') {
-              mouseX = e.touches[0].clientX - viewerRect.left;
-              mouseY = e.touches[0].clientY - viewerRect.top;
-          } else {
-              mouseX = e.clientX - viewerRect.left;
-              mouseY = e.clientY - viewerRect.top;
-          }
+            let mouseX, mouseY;
+            if (e.type === 'touchmove') {
+                mouseX = e.touches[0].clientX - viewerRect.left;
+                mouseY = e.touches[0].clientY - viewerRect.top;
+            } else {
+                mouseX = e.clientX - viewerRect.left;
+                mouseY = e.clientY - viewerRect.top;
+            }
 
-          currentX = mouseX - initialX;
-          currentY = mouseY - initialY;
+            currentX = mouseX - initialX;
+            currentY = mouseY - initialY;
 
-          // Constrain movement within PDF viewer bounds
-          currentX = Math.min(Math.max(0, currentX), viewerRect.width - element.offsetWidth);
-          currentY = Math.min(Math.max(0, currentY), viewerRect.height - element.offsetHeight);
+            // Constrain movement within PDF viewer bounds
+            currentX = Math.min(Math.max(0, currentX), viewerRect.width - element.offsetWidth);
+            currentY = Math.min(Math.max(0, currentY), viewerRect.height - element.offsetHeight);
 
-          // Update element position
-          element.style.left = `${currentX}px`;
-          element.style.top = `${currentY}px`;
-          
-          // Store the offset for next drag
-          xOffset = currentX;
-          yOffset = currentY;
-      }
-  }
+            // Update element position
+            element.style.left = `${currentX}px`;
+            element.style.top = `${currentY}px`;
+            
+            // Store the offset for next drag
+            xOffset = currentX;
+            yOffset = currentY;
+        }
+    }
 
-  function dragEnd() {
-      active = false;
-  }
+    function dragEnd() {
+        active = false;
+    }
 }
 
-// Add these styles to ensure proper positioning
-const style = document.createElement('style');
-style.textContent = `
-  #pdf-viewer {
-      position: relative !important;
-      overflow: hidden;
-  }
+function addDateTime() {
+    const dateTime = document.getElementById('date-time-picker').value;
+    if (!dateTime) {
+        alert('Please select a date and time');
+        return;
+    }
 
-  .signature-preview {
-      position: absolute !important;
-      cursor: move;
-      z-index: 1000;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: none;
-  }
+    const dateTimeElement = document.createElement('div');
+    dateTimeElement.textContent = new Date(dateTime).toLocaleString();
+    dateTimeElement.className = 'date-time-preview';
+    dateTimeElement.style.position = 'absolute';
+    dateTimeElement.style.left = '50px';
+    dateTimeElement.style.top = '100px';
+    dateTimeElement.style.backgroundColor = 'white';
+    dateTimeElement.style.padding = '5px';
+    dateTimeElement.style.border = '1px solid black';
+    dateTimeElement.style.borderRadius = '3px';
+    dateTimeElement.style.fontSize = '14px';
+    dateTimeElement.style.zIndex = '1000';
 
-  #pdf-viewer canvas {
-      z-index: 1;
-      position: relative;
-  }
-`;
-document.head.appendChild(style);
+    const pdfViewer = document.getElementById('pdf-viewer');
+    pdfViewer.appendChild(dateTimeElement);
+
+    makeDraggable(dateTimeElement);
+}
+
+function addStamp() {
+    const stampFile = document.getElementById('stamp-upload').files[0];
+    if (!stampFile) {
+        alert('Please upload a stamp image');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const stampImage = document.createElement('img');
+        stampImage.src = e.target.result;
+        stampImage.className = 'stamp-preview';
+        stampImage.style.position = 'absolute';
+        stampImage.style.left = '50px';
+        stampImage.style.top = '150px';
+        stampImage.style.maxWidth = '100px';
+        stampImage.style.maxHeight = '100px';
+        stampImage.style.zIndex = '1000';
+
+        const pdfViewer = document.getElementById('pdf-viewer');
+        pdfViewer.appendChild(stampImage);
+
+        makeDraggable(stampImage);
+    }
+    reader.readAsDataURL(stampFile);
+}
+
+function addText() {
+    const text = document.getElementById('text-input').value;
+    if (!text) {
+        alert('Please enter some text');
+        return;
+    }
+
+    const textElement = document.createElement('div');
+    textElement.textContent = text;
+    textElement.className = 'text-preview';
+    textElement.style.position = 'absolute';
+    textElement.style.left = '50px';
+    textElement.style.top = '200px';
+    textElement.style.backgroundColor = 'white';
+    textElement.style.padding = '5px';
+    textElement.style.border = '1px solid black';
+    textElement.style.borderRadius = '3px';
+    textElement.style.fontSize = '14px';
+    textElement.style.zIndex = '1000';
+
+    const pdfViewer = document.getElementById('pdf-viewer');
+    pdfViewer.appendChild(textElement);
+
+    makeDraggable(textElement);
+}
 
 async function handleDownload() {
     if (!pdfDoc) {
@@ -303,9 +353,9 @@ async function handleDownload() {
         return;
     }
 
-    const signature = document.querySelector('.signature-preview');
-    if (!signature) {
-        alert('Please add a signature first');
+    const elements = document.querySelectorAll('.signature-preview, .date-time-preview, .stamp-preview, .text-preview');
+    if (elements.length === 0) {
+        alert('Please add at least one element (signature, date & time, stamp, or text) to the document');
         return;
     }
 
@@ -314,22 +364,24 @@ async function handleDownload() {
 
     try {
         const pdfCanvas = document.querySelector('#pdf-viewer canvas');
-        const signaturePosition = {
-            x: parseInt(signature.style.left) / pdfCanvas.width,
-            y: 1 - (parseInt(signature.style.top) + signature.height) / pdfCanvas.height,
-            width: signature.width / pdfCanvas.width,
-            height: signature.height / pdfCanvas.height
-        };
+        const elementsData = Array.from(elements).map(element => ({
+            type: element.className,
+            x: parseInt(element.style.left) / pdfCanvas.width,
+            y: 1 - (parseInt(element.style.top) + element.offsetHeight) / pdfCanvas.height,
+            width: element.offsetWidth / pdfCanvas.width,
+            height: element.offsetHeight / pdfCanvas.height,
+            content: element.tagName.toLowerCase() === 'img' ? element.src : element.textContent
+        }));
 
-        // Create new PDF with signature
-        const pdfBytes = await createSignedPDF(signaturePosition);
+        // Create new PDF with added elements
+        const pdfBytes = await createModifiedPDF(elementsData);
         
         // Download the PDF
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'signed-document.pdf';
+        link.download = 'modified-document.pdf';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -342,7 +394,7 @@ async function handleDownload() {
     }
 }
 
-async function createSignedPDF(signaturePosition) {
+async function createModifiedPDF(elementsData) {
     const formData = new FormData();
     const pdfFile = document.getElementById('document-upload').files[0];
     const pdfArrayBuffer = await pdfFile.arrayBuffer();
@@ -351,17 +403,27 @@ async function createSignedPDF(signaturePosition) {
     const pages = pdfDoc.getPages();
     const page = pages[currentPage - 1];
 
-    const signatureImage = document.querySelector('.signature-preview');
-    const signatureBytes = await fetch(signatureImage.src).then(res => res.arrayBuffer());
-    const signatureEmbed = await pdfDoc.embedPng(signatureBytes);
-
     const { width, height } = page.getSize();
-    page.drawImage(signatureEmbed, {
-        x: width * signaturePosition.x,
-        y: height * signaturePosition.y,
-        width: width * signaturePosition.width,
-        height: height * signaturePosition.height
-    });
+
+    for (const element of elementsData) {
+        if (element.type === 'signature-preview' || element.type === 'stamp-preview') {
+            const imageBytes = await fetch(element.content).then(res => res.arrayBuffer());
+            const image = await pdfDoc.embedPng(imageBytes);
+            page.drawImage(image, {
+                x: width * element.x,
+                y: height * element.y,
+                width: width * element.width,
+                height: height * element.height
+            });
+        } else {
+            page.drawText(element.content, {
+                x: width * element.x,
+                y: height * element.y,
+                size: 14,
+                color: rgb(0, 0, 0)
+            });
+        }
+    }
 
     return await pdfDoc.save();
 }
