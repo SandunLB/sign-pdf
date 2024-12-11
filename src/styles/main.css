@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 #pdf-viewer {
-    position: relative;
-    min-height: 500px;
-    background: white;
+    position: relative !important;
     overflow: hidden;
+    max-width: 880px;  /* Added this line */
+    margin: 0 auto;    /* Center the viewer */
 }
 
 #pdf-viewer canvas {

@@ -182,13 +182,16 @@ async function handleSaveSignature() {
   const pdfViewer = document.getElementById('pdf-viewer');
   pdfViewer.appendChild(signatureImage);
 
-  // Initialize position at center of viewer
-  const viewerRect = pdfViewer.getBoundingClientRect();
-  const initialX = (viewerRect.width - signatureImage.offsetWidth) / 2;
-  const initialY = viewerRect.height / 4; // Position at first quarter of height
-  
-  signatureImage.style.left = `${initialX}px`;
-  signatureImage.style.top = `${initialY}px`;
+  // Wait for image to load to get correct dimensions
+  signatureImage.onload = () => {
+      // Center horizontally and position at top quarter
+      const viewerRect = pdfViewer.getBoundingClientRect();
+      const initialX = 50; // Fixed left margin
+      const initialY = 50; // Fixed top margin
+      
+      signatureImage.style.left = `${initialX}px`;
+      signatureImage.style.top = `${initialY}px`;
+  };
 
   makeDraggable(signatureImage);
 }
@@ -199,8 +202,8 @@ function makeDraggable(element) {
   let currentY;
   let initialX;
   let initialY;
-  let xOffset = 0;
-  let yOffset = 0;
+  let xOffset = parseInt(element.style.left) || 0;
+  let yOffset = parseInt(element.style.top) || 0;
 
   element.addEventListener('mousedown', dragStart, false);
   element.addEventListener('touchstart', dragStart, false);
@@ -210,16 +213,25 @@ function makeDraggable(element) {
   document.addEventListener('touchend', dragEnd, false);
 
   function dragStart(e) {
+      const pdfViewer = document.getElementById('pdf-viewer');
+      const viewerRect = pdfViewer.getBoundingClientRect();
+
       if (e.type === 'touchstart') {
-          initialX = e.touches[0].clientX - xOffset;
-          initialY = e.touches[0].clientY - yOffset;
+          initialX = e.touches[0].clientX - viewerRect.left;
+          initialY = e.touches[0].clientY - viewerRect.top;
       } else {
-          initialX = e.clientX - xOffset;
-          initialY = e.clientY - yOffset;
+          initialX = e.clientX - viewerRect.left;
+          initialY = e.clientY - viewerRect.top;
       }
 
       if (e.target === element) {
           active = true;
+          xOffset = parseInt(element.style.left) || 0;
+          yOffset = parseInt(element.style.top) || 0;
+          
+          // Calculate the offset from the mouse position to the element's top-left corner
+          initialX = initialX - xOffset;
+          initialY = initialY - yOffset;
       }
   }
 
@@ -228,36 +240,40 @@ function makeDraggable(element) {
           e.preventDefault();
 
           const pdfViewer = document.getElementById('pdf-viewer');
-          const rect = pdfViewer.getBoundingClientRect();
+          const viewerRect = pdfViewer.getBoundingClientRect();
 
+          let mouseX, mouseY;
           if (e.type === 'touchmove') {
-              currentX = e.touches[0].clientX - initialX;
-              currentY = e.touches[0].clientY - initialY;
+              mouseX = e.touches[0].clientX - viewerRect.left;
+              mouseY = e.touches[0].clientY - viewerRect.top;
           } else {
-              currentX = e.clientX - initialX;
-              currentY = e.clientY - initialY;
+              mouseX = e.clientX - viewerRect.left;
+              mouseY = e.clientY - viewerRect.top;
           }
 
+          currentX = mouseX - initialX;
+          currentY = mouseY - initialY;
+
           // Constrain movement within PDF viewer bounds
-          currentX = Math.min(Math.max(0, currentX), rect.width - element.offsetWidth);
-          currentY = Math.min(Math.max(0, currentY), rect.height - element.offsetHeight);
+          currentX = Math.min(Math.max(0, currentX), viewerRect.width - element.offsetWidth);
+          currentY = Math.min(Math.max(0, currentY), viewerRect.height - element.offsetHeight);
 
-          xOffset = currentX;
-          yOffset = currentY;
-
+          // Update element position
           element.style.left = `${currentX}px`;
           element.style.top = `${currentY}px`;
+          
+          // Store the offset for next drag
+          xOffset = currentX;
+          yOffset = currentY;
       }
   }
 
   function dragEnd() {
-      initialX = currentX;
-      initialY = currentY;
       active = false;
   }
 }
 
-// Update the CSS for the PDF viewer and signature
+// Add these styles to ensure proper positioning
 const style = document.createElement('style');
 style.textContent = `
   #pdf-viewer {
@@ -276,6 +292,7 @@ style.textContent = `
 
   #pdf-viewer canvas {
       z-index: 1;
+      position: relative;
   }
 `;
 document.head.appendChild(style);
