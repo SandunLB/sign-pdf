@@ -1,12 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+body {
+    font-family: 'Inter', sans-serif;
+}
 
 #pdf-viewer {
     position: relative !important;
     overflow: hidden;
-    max-width: 880px;
+    max-width: 100%;
     margin: 0 auto;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 #pdf-viewer canvas {
@@ -26,4 +31,46 @@
     z-index: 1000;
     pointer-events: auto;
     cursor: move;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    padding: 4px;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.tool-section {
+    transition: all 0.3s ease;
+}
+
+.tool-section:hover {
+    transform: translateY(-2px);
+}
+
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+input[type="file"] {
+    transition: all 0.2s ease;
+}
+
+input[type="file"]:hover {
+    background-color: #f0f9ff;
+}
+
+#signature-pad {
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 1024px) {
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
 }
